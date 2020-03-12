@@ -1,0 +1,11 @@
+/home/stewie2kill/Documents/mdh_code/bin/Debug/netcoreapp3.1/mdh_code
+/home/stewie2kill/Documents/mdh_code/bin/Debug/netcoreapp3.1/mdh_code.deps.json
+/home/stewie2kill/Documents/mdh_code/bin/Debug/netcoreapp3.1/mdh_code.runtimeconfig.json
+/home/stewie2kill/Documents/mdh_code/bin/Debug/netcoreapp3.1/mdh_code.runtimeconfig.dev.json
+/home/stewie2kill/Documents/mdh_code/bin/Debug/netcoreapp3.1/mdh_code.dll
+/home/stewie2kill/Documents/mdh_code/bin/Debug/netcoreapp3.1/mdh_code.pdb
+/home/stewie2kill/Documents/mdh_code/obj/Debug/netcoreapp3.1/mdh_code.csprojAssemblyReference.cache
+/home/stewie2kill/Documents/mdh_code/obj/Debug/netcoreapp3.1/mdh_code.AssemblyInfoInputs.cache
+/home/stewie2kill/Documents/mdh_code/obj/Debug/netcoreapp3.1/mdh_code.AssemblyInfo.cs
+/home/stewie2kill/Documents/mdh_code/obj/Debug/netcoreapp3.1/mdh_code.dll
+/home/stewie2kill/Documents/mdh_code/obj/Debug/netcoreapp3.1/mdh_code.pdb
