@@ -59,7 +59,37 @@ namespace mdh_code
 
                 }
             }
+        }
 
+        public void CreateFiles()
+        {
+
+            if(!File.Exists("water"))
+            {
+                FileStream fs = File.Create("water");
+                fs.Close();
+
+                StreamWriter sw = new StreamWriter("water");
+                sw.WriteLine(0.0);
+            }
+
+            if(!File.Exists("sewage"))
+            {
+                FileStream fs = File.Create("sewage");
+                fs.Close();
+
+                StreamWriter sw = new StreamWriter("sewage");
+                sw.WriteLine(0.0);
+            }
+
+            if(!File.Exists("power"))
+            {
+                FileStream fs = File.Create("power");
+                fs.Close();
+
+                StreamWriter sw = new StreamWriter("power");
+                sw.WriteLine(0.0);
+            }
         }
     }
 
