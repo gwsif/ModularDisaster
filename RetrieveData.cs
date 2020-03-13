@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Globalization;
 
 namespace mdh_code
 {
@@ -10,7 +11,7 @@ namespace mdh_code
         {
             // Parameters
             double water = 0.0;
-            double sewage = 0.0 ;
+            double sewage = 0.0;
             double power = 0.0;
 
             /*Read the contents of each dummy file
@@ -35,10 +36,10 @@ namespace mdh_code
             CheckValid(sewage, "SEWAGE");
             CheckValid(power, "POWER");
 
-            // Echo These back for test purposes;
-            Console.WriteLine("Water: " + water);
-            Console.WriteLine("Sewage: " + sewage);
-            Console.WriteLine("Power: " + power);
+            // Echo These back for test purposes and format them;
+            Console.WriteLine("Water: " + water.ToString("P", CultureInfo.InvariantCulture));
+            Console.WriteLine("Sewage: " + sewage.ToString("P", CultureInfo.InvariantCulture));
+            Console.WriteLine("Power: " + power.ToString("P", CultureInfo.InvariantCulture));
         }
 
         public void CheckValid(double in_Value, string attr)
@@ -70,7 +71,8 @@ namespace mdh_code
                 fs.Close();
 
                 StreamWriter sw = new StreamWriter("water");
-                sw.WriteLine(0.0);
+                sw.WriteLine("0.0");
+                sw.Close();
             }
 
             if(!File.Exists("sewage"))
@@ -79,16 +81,18 @@ namespace mdh_code
                 fs.Close();
 
                 StreamWriter sw = new StreamWriter("sewage");
-                sw.WriteLine(0.0);
+                sw.WriteLine("0.0");
+                sw.Close();
             }
 
             if(!File.Exists("power"))
             {
                 FileStream fs = File.Create("power");
                 fs.Close();
-
+                
                 StreamWriter sw = new StreamWriter("power");
-                sw.WriteLine(0.0);
+                sw.WriteLine("0.0");
+                sw.Close();
             }
         }
     }
