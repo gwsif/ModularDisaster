@@ -1,11 +1,19 @@
 using System;
 using System.Net.NetworkInformation;
 using System.Net;
+using System.Linq;
+using System.Net.Sockets;
 
 namespace mdh_code
 {
     class NetworkRW
     {
+        /// <summary>
+        /// Returns the MAC address of the NIC, excluding the loopback device
+        /// </summary>
+        /// <returns>
+        /// A string representing the current machines MAC Address
+        /// </returns>
         public string ReturnMAC()
         {
             // Declare some holder values
@@ -34,15 +42,28 @@ namespace mdh_code
             return m_addr;
         }
 
+        /// <summary>
+        /// Returns the IPv4 Address of the local machine
+        /// </summary>
+        /// <returns>
+        /// The Local IPv4 Address
+        /// </returns>
         public string ReturnIP()
         {
-            string hostname = Dns.GetHostName();
+            // declare holder string
+            string ip4address = "";
 
-            IPHostEntry ipe = Dns.GetHostEntry(hostname);
+            // iterrate through our addresses on the local machine
+            foreach (IPAddress ipa in Dns.GetHostAddresses(Dns.GetHostName()))
+            {
+                if (ipa.AddressFamily == AddressFamily.InterNetwork) // if it's ipv4 assign it
+                {
+                    ip4address = ipa.ToString();
+                    break;
+                }
+            }
 
-            IPAddress[] addr = ipe.AddressList;
-
-            return addr[addr.Length - 1].ToString();
+            return ip4address;
         }
     }
 }

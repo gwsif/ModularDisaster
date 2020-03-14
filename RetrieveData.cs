@@ -7,6 +7,12 @@ namespace mdh_code
 {
     class RetrieveData
     {
+        /// <summary>
+        /// Reads water, sewage, and power levels from unit sensors and echoes them
+        /// </summary>
+        /// <returns>
+        /// void
+        /// </returns>
         public void ReadLevels()
         {
             // Parameters
@@ -42,6 +48,12 @@ namespace mdh_code
             Console.WriteLine("Power: " + power.ToString("P", CultureInfo.InvariantCulture));
         }
 
+        /// <summary>
+        /// Checks if the given values are between 0 and 1 (inclusive) and logs an error if out of bounds.
+        /// </summary>
+        /// <returns>
+        /// void
+        /// </returns>
         public void CheckValid(double in_Value, string attr)
         {
             // if values are not within bounds - echo an error code
@@ -62,6 +74,13 @@ namespace mdh_code
             }
         }
 
+        /// <summary>
+        /// Creates files for water, sewage, and power sensors if they do not exist.
+        /// </summary>
+        /// <returns>
+        /// void
+        /// </returns>
+        
         public void CreateFiles()
         {
 

@@ -19,8 +19,10 @@ namespace mdh_code
 
             // Print out the local Network Device MAC address and IPv6 Address
             NetworkRW rw = new NetworkRW();
-            Console.WriteLine(rw.ReturnMAC()); // returns the MAC address of the current machine
-            Console.WriteLine(rw.ReturnIP());  // returns the IPv6 address of the current machine
+            
+            Console.WriteLine("\n"); // newline for testing
+            Console.WriteLine("MAC ADDRESS: " + rw.ReturnMAC()); // returns the MAC address of the current machine
+            Console.WriteLine("LOCAL IP: " + rw.ReturnIP());  // returns the IPv6 address of the current machine
         }
     }
 }
