@@ -5,15 +5,15 @@ using System.Globalization;
 
 namespace mdh_code
 {
-    class RetrieveData
+    public static class RetrieveData
     {
         /// <summary>
-        /// Reads water, sewage, and power levels from unit sensors and echoes them
+        /// Reads water, sewage, and power levels from unit sensors and returns them
         /// </summary>
         /// <returns>
-        /// void
+        /// A comma delimited string containing water, sewage, and power.
         /// </returns>
-        public void ReadLevels()
+        public static string ReadLevels()
         {
             // Parameters
             double water = 0.0;
@@ -42,11 +42,19 @@ namespace mdh_code
             CheckValid(sewage, "SEWAGE");
             CheckValid(power, "POWER");
 
-            // Echo These back for test purposes and format them;
+            /* Echo These back for TEST purposes and format them;
             Console.WriteLine("Water: " + water.ToString("P", CultureInfo.InvariantCulture));
             Console.WriteLine("Sewage: " + sewage.ToString("P", CultureInfo.InvariantCulture));
             Console.WriteLine("Power: " + power.ToString("P", CultureInfo.InvariantCulture));
+            */
+
+            // Concatenate values in string with delimiter
+            string rtn = water + "," + sewage + "," + power;
+
+            return rtn;
         }
+
+
 
         /// <summary>
         /// Checks if the given values are between 0 and 1 (inclusive) and logs an error if out of bounds.
@@ -54,7 +62,7 @@ namespace mdh_code
         /// <returns>
         /// void
         /// </returns>
-        public void CheckValid(double in_Value, string attr)
+        public static void CheckValid(double in_Value, string attr)
         {
             // if values are not within bounds - echo an error code
             //   and issue it to error log with a timestamp
@@ -81,7 +89,7 @@ namespace mdh_code
         /// void
         /// </returns>
         
-        public void CreateFiles()
+        public static void CreateFiles()
         {
 
             if(!File.Exists("water"))
