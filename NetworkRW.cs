@@ -69,6 +69,12 @@ namespace mdh_code
             return ip4address;
         }
 
+        /// <Summary>
+        /// Scans the network for IP Addresses and MAC Addresses and prints them out
+        /// </Summary>
+        /// <Returns>
+        /// void
+        /// </Summary>
         public void TCPScan()
         {
             // run nmap
