@@ -1,8 +1,11 @@
 using System;
-using System.Net.NetworkInformation;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Linq;
 using System.Net.Sockets;
+using System.Net.WebSockets;
+using System.IO;
+using System.Collections.Generic;
 
 namespace mdh_code
 {
@@ -64,6 +67,63 @@ namespace mdh_code
             }
 
             return ip4address;
+        }
+
+        public void TCPScan()
+        {
+            // run nmap
+            string cmd = "nmap -sP 192.168.1.0/24 | awk '/is up/ {print up}; {gsub (/\\(|\\)/,\"\"); up = $NF}'";
+            var output = cmd.ExecBash();
+
+            // Create a List for the ips
+            List<string> iplist = new List<string>();
+
+            // Create a List for the MACs
+            List<string> maclist = new List<string>();
+
+            // Split the outputs and add them to the list
+            iplist = output.Split('\n').ToList();
+
+            // Remove the last line of the list (because it's always blank)
+            if(iplist.Any())
+            {
+                iplist.RemoveAt(iplist.Count - 1);
+            }
+
+            // For each ip in the list, ping it to get the MAC address then add to the list
+            foreach (var address in iplist)
+            {
+                string getresult = "arping -c 1 " + address + " | grep -o -E \'([[:xdigit:]]{1,2}:){5}[[:xdigit:]]{1,2}\'"; // use grep to pull the MAC
+                var result = getresult.ExecBash();
+                
+                if (result == "") //if no result, tell that it's not available
+                {
+                    result = "Unavailable";
+                }
+                maclist.Add(result); // add it to the list               
+            }
+
+            //Show entries in the lists together
+            for (var i = 0; i < iplist.Count; i++)
+            {
+                Console.WriteLine("FOUND!");
+                Console.WriteLine("IP: " + iplist[i] + " MAC: " + maclist[i]); //Show on same line
+            }
+
+            /* shove into file
+            FileStream fs = File.Create("ips");
+            fs.Close();
+
+            StreamWriter sw = new StreamWriter("ips");
+            sw.WriteLine(output);
+            sw.Close();
+            */
+            
+            // Associate 
+
+            // print the output
+            //Console.WriteLine(iplist[0]);
+
         }
     }
 }
