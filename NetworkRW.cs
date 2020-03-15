@@ -209,7 +209,8 @@ namespace mdh_code
                     Console.WriteLine(e.ToString());
                 }
 
-                listener.Stop();
+                // Commented out for Testing
+                //listener.Stop();
             }
         }
 

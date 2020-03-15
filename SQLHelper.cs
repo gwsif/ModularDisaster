@@ -1,5 +1,5 @@
 using System;
-using System.Data.SQLite;
+using Microsoft.Data.Sqlite;
 using System.Collections.Generic;
 
 namespace mdh_code
@@ -28,12 +28,13 @@ namespace mdh_code
 
         public void Run_Cmd()
         {
-            SQLiteConnection m_dbConnection;
-            m_dbConnection = new SQLiteConnection("Data Source=mdh.sqlite;Version=3;");
+          
+            SqliteConnection m_dbConnection;
+            m_dbConnection = new SqliteConnection("Data Source=mdh.db");
             m_dbConnection.Open();
 
             // Create our command
-            SQLiteCommand command = new SQLiteCommand(command_string, m_dbConnection);
+            SqliteCommand command = new SqliteCommand(command_string, m_dbConnection);
 
             // Execute our command
             command.ExecuteNonQuery();
@@ -44,15 +45,15 @@ namespace mdh_code
 
         public void SetIPs()
         {
-            SQLiteConnection m_dbConnection;
-            m_dbConnection = new SQLiteConnection("Data Source=mdh.sqlite;Version=3");
+            SqliteConnection m_dbConnection;
+            m_dbConnection = new SqliteConnection("Data Source=mdh.db");
             m_dbConnection.Open();
 
             // Create our command
-            SQLiteCommand command = new SQLiteCommand(command_string, m_dbConnection);
+            SqliteCommand command = new SqliteCommand(command_string, m_dbConnection);
 
             // Start the reader
-            SQLiteDataReader reader = command.ExecuteReader();
+            SqliteDataReader reader = command.ExecuteReader();
 
             // While the reader has data to read, append the text to the areturn string
             while (reader.Read())
@@ -73,8 +74,8 @@ namespace mdh_code
 
         public static void CreateDB()
         {
-            SQLiteConnection m_dbConnection;
-            m_dbConnection = new SQLiteConnection("Data Source=mdh.sqlite;Version=3");
+            SqliteConnection m_dbConnection;
+            m_dbConnection = new SqliteConnection("Data Source=mdh.db");
             m_dbConnection.Open();
 
             // Create our Tables
@@ -82,10 +83,10 @@ namespace mdh_code
             string stat_table = ("CREATE TABLE IF NOT EXISTS status (timestamp INTEGER NOT NULL, unit_id TEXT UNIQUE, w_level REAL, s_level REAL, "
                                  + "p_level REAL, PRIMARY KEY(timestamp), FOREIGN KEY(unit_id) REFERENCES units(unit_id))");
             
-            SQLiteCommand makeUnits = new SQLiteCommand(units_table, m_dbConnection);
+            SqliteCommand makeUnits = new SqliteCommand(units_table, m_dbConnection);
             makeUnits.ExecuteNonQuery();
             
-            SQLiteCommand makeStats = new SQLiteCommand(stat_table, m_dbConnection);
+            SqliteCommand makeStats = new SqliteCommand(stat_table, m_dbConnection);
             makeStats.ExecuteNonQuery();
 
             // Close the connection
