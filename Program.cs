@@ -75,7 +75,7 @@ namespace mdh_code
                 //NetworkRW.TcpTownClient();
 
                 // if the database doesn't exist, generate it and populate it
-                if(!File.Exists("mdh.sqlite"))
+                if(!File.Exists("mdh.db"))
                 {
                     SQLHelper.CreateDB();
                     NetworkRW.TCPScan();

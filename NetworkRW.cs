@@ -203,6 +203,9 @@ namespace mdh_code
                     ns.Write(byte_levels, 0, byte_levels.Length);
                     ns.Close();
                     client.Close();
+
+                    // Show how many bytes we sent on each connection
+                    Console.WriteLine("Connection Established... Sent " + byte_levels.Length.ToString() + " Bytes");
                 }
                 catch (Exception e)
                 {
@@ -220,26 +223,57 @@ namespace mdh_code
             SQLHelper getips = new SQLHelper("SELECT ip FROM units");
             getips.Run_Cmd();
             getips.SetIPs();
-            
-            List<string> iplist = getips.Get_List();
 
-            // Now go through each ip in the list and request the data 
+            // Fetch unit ids in a list
+            SQLHelper getids = new SQLHelper("SELECT unit_id FROM units");
+            getids.Run_Cmd();
+            getids.SetIDs();
+            
+            // Make a new list for the ips and ids
+            List<string> iplist = getips.Get_List();
+            List<string> idlist = getids.Get_List();
+
+            // Now go through down each ip and id in the lists and request the data 
             foreach(var address in iplist)
             {
-                // Create a new TCP Client with the address and default port number
-                var client = new TcpClient(address, portNum);
+                foreach(var id in idlist)
+                {
+                    // Create a new TCP Client with the address and default port number
+                    var client = new TcpClient(address, portNum);
 
-                // Establish a network Stream
-                NetworkStream ns = client.GetStream();
+                    // Establish a network Stream
+                    NetworkStream ns = client.GetStream();
 
-                // Setup a byte array
-                byte[] bytes = new byte[1024];
+                    // Setup a byte array
+                    byte[] bytes = new byte[1024];
 
-                // Read the bytes into the array
-                int bytesRead = ns.Read(bytes, 0, bytes.Length);
+                    // Read the bytes into the array
+                    int bytesRead = ns.Read(bytes, 0, bytes.Length);
 
-                // TEST the output
-                Console.WriteLine(Encoding.ASCII.GetString(bytes,0,bytesRead)); 
+                    // Format to string
+                    string received = Encoding.ASCII.GetString(bytes,0,bytesRead);
+
+                    // Turn the input levels to an array
+                    string[] levels = received.Split(',');
+
+                    // Turn each level into a double
+                    double wat = Convert.ToDouble(levels[0]);
+                    double sew = Convert.ToDouble(levels[1]);
+                    double pow = Convert.ToDouble(levels[2]);
+
+                    // Generate a timestamp
+                    Int32 unixTimestamp = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+
+                    // Insert values with associated unit id into Database
+                    SQLHelper insertcmd = new SQLHelper("INSERT INTO status VALUES(" + unixTimestamp + "," + "'" + id + "'," + wat + "," + sew + "," + pow +")");
+                    insertcmd.Run_Cmd();
+
+                    
+                    // TEST the output
+                    //Console.WriteLine(Encoding.ASCII.GetString(bytes,0,bytesRead));
+
+
+                }
 
             }
         }
