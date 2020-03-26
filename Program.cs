@@ -41,6 +41,11 @@ namespace mdh_code
                 {
                     SQLHelper.CreateDB();
                 }
+
+                if(args[i] == "--refresh-city")
+                {
+                    NetworkRW.FindCity();
+                }
             }
             #endregion
         
@@ -70,15 +75,18 @@ namespace mdh_code
 
             if (ContextSwitch.GetMode() == 1) // if town
             {
-                // We request a connection to the Unit
-                // by using the TCP Town Client in Network Read/Write
-                //NetworkRW.TcpTownClient();
-
+                Console.WriteLine("Town Mode Detected!");
+                
                 // if the database doesn't exist, generate it and populate it
                 if(!File.Exists("mdh.db"))
-                {
-                    SQLHelper.CreateDB();
-                    NetworkRW.TCPScan();
+                {   
+                    Console.WriteLine("Generating Database...");
+                    SQLHelper.CreateDB(); // create the database
+                    Console.WriteLine("Scanning Network...");
+                    NetworkRW.TCPScan(); // populate the database
+                    Console.WriteLine("Detecting City...");
+                    NetworkRW.FindCity(); // find the city
+
                 }
 
                 // Initiate the TCP town client
@@ -87,7 +95,21 @@ namespace mdh_code
 
             if (ContextSwitch.GetMode() == 2) // if city
             {
-                // We request a connection to Town Controls
+                Console.WriteLine("City Mode Detected!");
+
+                // if the database doesn't exist yet generate it, but do not populate it.
+                if(!File.Exists("mdh.db"))
+                {
+                    Console.WriteLine("Generating Database...");
+                    SQLHelper.CreateDB(); // create the database
+
+                    // initialize the city and await confirmation
+                    if (NetworkRW.CitySetup() == true)
+                    {
+                        Console.WriteLine("City Setup Successful!");
+                    }
+                }
+
             }
             #endregion
         /*

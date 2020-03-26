@@ -5,12 +5,18 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Collections.Generic;
 using System.Text;
+using System.IO;
+using System.Threading.Tasks; 
 
 namespace mdh_code
 {
     public static class NetworkRW
     {
         private const int portNum = 4053; //port to listen on
+        private const string cityID = "CCNCS";
+        private const string masterhost = "raspberrypi"; // Only devices with this hostname will have ips and MACs added!
+        private const string townackmsg = "TACK"; // message to be sent to city when town finds a city
+        private const string cityackmsg = cityID;
 
         /// <summary>
         /// Returns the MAC address of the NIC, excluding the loopback device
@@ -92,8 +98,6 @@ namespace mdh_code
         /// </returns>
         public static void TCPScan()
         {
-            string masterhost = "raspberrypi"; // Only devices with this hostname will have ips and MACs added!
-
             // run nmap for hostnames
             string hstcmd = "nmap -sn 192.168.1.0/24 | awk '/scan report/ {print $5}'";
             var hstouput = hstcmd.ExecBash();
@@ -238,6 +242,112 @@ namespace mdh_code
             {
                 foreach(var id in idlist)
                 {
+                    // if the id is not our city identifier, proceed with asking for levels
+                    if (id.ToString() != cityID) // !potential logic error != continues code, == skips... no idea why?
+                    {
+                        //debugging
+                        var checkme = id;
+
+                        // Create a new TCP Client with the address and default port number
+                        var client = new TcpClient(address, portNum);
+
+                        // Establish a network Stream
+                        NetworkStream ns = client.GetStream();
+
+                        // Setup a byte array
+                        byte[] bytes = new byte[1024];
+
+                        // Read the bytes from the network stream into the array
+                        int bytesRead = ns.Read(bytes, 0, bytes.Length);
+
+                        // Format to string
+                        string received = Encoding.ASCII.GetString(bytes,0,bytesRead);
+
+                        // Turn the input levels to an array
+                        string[] levels = received.Split(',');
+
+                        // Turn each level into a double
+                        double wat = Convert.ToDouble(levels[0]);
+                        double sew = Convert.ToDouble(levels[1]);
+                        double pow = Convert.ToDouble(levels[2]);
+
+                        // Generate a timestamp
+                        Int32 unixTimestamp = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+
+                        // Insert values with associated unit id into Database
+                        SQLHelper insertcmd = new SQLHelper("INSERT INTO status VALUES(" + unixTimestamp + "," + "'" + id + "'," + wat + "," + sew + "," + pow +")");
+                        insertcmd.Run_Cmd();
+
+                        // Report levels
+                        Console.WriteLine("Unit " + id + " reports " + wat + " water, " + sew + " sewage, " + pow + " power");
+
+                    }
+
+                    // if we are dealing with a city, we need to send the acknowledgement message - sp spin up a server
+                    else
+                    {
+                        // echo we're ignoring
+                        Console.WriteLine("Skipping City...");
+
+                    }
+                }
+
+            }
+        }
+
+        // Sends the town ACK message !USELESS
+        public static void SendTownACK(string address)
+        {
+            // Set up a tcp client using the address and default portnumber
+                var client = new TcpClient(address, portNum);
+
+                // establish a network stream
+                NetworkStream ns = client.GetStream();
+
+                // setup our bytes array
+                byte[] bytes = new byte[1024];
+
+                // populate the byte array with our acknowledgement message
+                byte[] byte_cityack = Encoding.ASCII.GetBytes(townackmsg);
+
+                // try to write the acknowledgement message
+                try
+                {
+                    ns.Write(byte_cityack, 0, byte_cityack.Length);
+                    ns.Close();
+                    client.Close();
+                }
+
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.ToString());
+                }
+        }
+
+        public static void FindCity()
+        {
+            // Set ACK message
+            string ackmsg = "CCNCS";
+
+            // Fetch ips in a list
+            SQLHelper getips = new SQLHelper("SELECT ip FROM units");
+            getips.Run_Cmd();
+            getips.SetIPs();
+
+            // Fetch unit ids in a list
+            SQLHelper getids = new SQLHelper("SELECT unit_id FROM units");
+            getids.Run_Cmd();
+            getids.SetIDs();
+            
+            // Make a new list for the ips and ids
+            List<string> iplist = getips.Get_List();
+            List<string> idlist = getids.Get_List();
+
+            // Now go through down each ip and id in the lists and request the data 
+            foreach(var address in iplist)
+            {
+                foreach(var id in idlist)
+                {
                     // Create a new TCP Client with the address and default port number
                     var client = new TcpClient(address, portNum);
 
@@ -245,39 +355,118 @@ namespace mdh_code
                     NetworkStream ns = client.GetStream();
 
                     // Setup a byte array
-                    byte[] bytes = new byte[1024];
+                    byte[] incoming_msg = new byte[1024];
 
-                    // Read the bytes into the array
-                    int bytesRead = ns.Read(bytes, 0, bytes.Length);
+                    // Read the bytes from the network stream into the array
+                    int bytesRead = ns.Read(incoming_msg, 0, incoming_msg.Length);
 
                     // Format to string
-                    string received = Encoding.ASCII.GetString(bytes,0,bytesRead);
-
-                    // Turn the input levels to an array
-                    string[] levels = received.Split(',');
-
-                    // Turn each level into a double
-                    double wat = Convert.ToDouble(levels[0]);
-                    double sew = Convert.ToDouble(levels[1]);
-                    double pow = Convert.ToDouble(levels[2]);
-
-                    // Generate a timestamp
-                    Int32 unixTimestamp = (Int32)(DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
-
-                    // Insert values with associated unit id into Database
-                    SQLHelper insertcmd = new SQLHelper("INSERT INTO status VALUES(" + unixTimestamp + "," + "'" + id + "'," + wat + "," + sew + "," + pow +")");
-                    insertcmd.Run_Cmd();
-
+                    string received = Encoding.ASCII.GetString(incoming_msg,0,bytesRead);
                     
-                    // TEST the output
-                    //Console.WriteLine(Encoding.ASCII.GetString(bytes,0,bytesRead));
+                    // if the message that is received is our defined acknowledement message, we have the town control.
+                    if (received == ackmsg)
+                    {
+                        //Change the unit_ID to CCNCS
+                        SQLHelper changeID = new SQLHelper("UPDATE units SET unit_id='CCNCS' WHERE ip= '" + address +"'");
+                        changeID.Run_Cmd();
 
+                        // Then send the city ACK message
+                        byte[] outgoing_msg = new byte[1024];
 
+                        // populate the byte array with our acknowledgement message
+                        byte[] byte_cityack = Encoding.ASCII.GetBytes(townackmsg);
+
+                        // try to write the acknowledgement message
+                        try
+                        {
+                            ns.Write(byte_cityack, 0, byte_cityack.Length);
+                            ns.Close();
+                            client.Close();
+                        }
+
+                        catch (Exception e)
+                        {
+                            Console.WriteLine(e.ToString());
+                        }
+
+                    }
                 }
-
             }
         }
 
+        // Initial mode for city - sends identifier, then awaits for acknowledgement to close listening server
+        // returns true if successful, false if unsuccessful.
+        public static bool CitySetup()
+        {
+            bool done = false;
+            bool status = false; // we set to true if connection was successful!
 
+            // Listen for connections on our defined port
+            var listener = new TcpListener(IPAddress.Any, portNum);
+            
+            // Echo we're beginning the listener
+            Console.WriteLine("City server now awaiting TCP connection to Town Control on port " + portNum);
+            
+            listener.Start();
+
+            TcpClient client = listener.AcceptTcpClient(); // accept the connection
+
+            NetworkStream ns = client.GetStream(); // establish a network stream
+
+            while (!done)
+            {
+                
+
+                byte[] outgoing_msg = Encoding.ASCII.GetBytes(cityID); // Retrieve and convert
+                
+                // try to send our data
+                try
+                {
+                    // Show we received a connection request
+                    Console.WriteLine("Incoming Connection....");
+
+                    ns.Write(outgoing_msg, 0, outgoing_msg.Length);
+                    //ns.Close();
+                    //client.Close();
+
+                    // Show we sent the data
+                    Console.WriteLine("Sent city...");
+
+
+                    Byte[] data = new Byte[256];
+
+                    String responseString = string.Empty;
+                    
+                    Int32 bytes = ns.Read(data, 0 , data.Length);
+                    
+                    Console.WriteLine("Looking for response...");
+
+                    responseString = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
+
+                    if (!String.IsNullOrEmpty(responseString))
+                    {
+                        Console.WriteLine("Success! Received MSG " + responseString);
+                        status = true;
+                        break;
+                    }
+                    // START THE CLIENT
+                    // IF CLIENT RETURNS TRUE SET DONE = TRUE
+                }
+                   
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.ToString());
+                    break;
+                }
+            }
+
+            // Stop the listener on success
+            ns.Close();
+            listener.Stop();
+
+            // return the boolean
+            return status;
+        }
+      
     }
 }

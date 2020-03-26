@@ -111,12 +111,17 @@ namespace mdh_code
             string units_table = ("CREATE TABLE IF NOT EXISTS units (mac TEXT UNIQUE, ip TEXT UNIQUE, unit_id TEXT UNIQUE)");
             string stat_table = ("CREATE TABLE IF NOT EXISTS status (timestamp INTEGER NOT NULL, unit_id TEXT, w_level REAL, s_level REAL, "
                                  + "p_level REAL, PRIMARY KEY(timestamp), FOREIGN KEY(unit_id) REFERENCES units(unit_id))");
+            string err_table = ("CREATE TABLE IF NOT EXISTS errors (errcode TEXT NOT NULL, errlevel INTEGER NOT NULL, errmessage TEXT NOT NULL, "
+                                 + "unit_ID TEXT NOT NULL, FOREIGN KEY(unit_id) REFERENCES units(unit_id))");
             
             SqliteCommand makeUnits = new SqliteCommand(units_table, m_dbConnection);
             makeUnits.ExecuteNonQuery();
             
             SqliteCommand makeStats = new SqliteCommand(stat_table, m_dbConnection);
             makeStats.ExecuteNonQuery();
+
+            SqliteCommand makeErrors = new SqliteCommand(err_table, m_dbConnection);
+            makeErrors.ExecuteNonQuery();
 
             // Close the connection
             m_dbConnection.Close();
