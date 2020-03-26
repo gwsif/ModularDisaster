@@ -224,11 +224,13 @@ namespace mdh_code
         public static void TcpTownClient()
         {
             // Fetch ips in a list
+            Console.WriteLine("Fetching IPs");
             SQLHelper getips = new SQLHelper("SELECT ip FROM units");
             getips.Run_Cmd();
             getips.SetIPs();
 
             // Fetch unit ids in a list
+            Console.WriteLine("Fetching IDs");
             SQLHelper getids = new SQLHelper("SELECT unit_id FROM units");
             getids.Run_Cmd();
             getids.SetIDs();
@@ -246,7 +248,10 @@ namespace mdh_code
                     if (id.ToString() != cityID) // !potential logic error != continues code, == skips... no idea why?
                     {
                         //debugging
-                        var checkme = id;
+                        //var checkme = id;
+                        
+                        // Tell who we are connecting to
+                        Console.WriteLine("Connecting to Unit" + id + "...");
 
                         // Create a new TCP Client with the address and default port number
                         var client = new TcpClient(address, portNum);
@@ -324,6 +329,40 @@ namespace mdh_code
                 }
         }
 
+        public static void SendError()
+        {
+            string dummyError = "ERR0, Testing Error Message and Error Message Value!";
+
+            SQLHelper getCityControl = new SQLHelper("SELECT ip FROM units WHERE unit_id='" + cityID + "'"); //get city IP
+            getCityControl.Run_Cmd();
+            getCityControl.SetIPs();
+            
+            List<string> city_ip_list = getCityControl.Get_List(); // shove city ip in a list (probably un-necessary)
+
+            foreach(var ip in city_ip_list)
+            {
+                var client = new TcpClient(ip, portNum); // connect to the city ip
+
+                NetworkStream ns = client.GetStream(); // establish the network stream
+
+                byte[] outgoing_msg = Encoding.ASCII.GetBytes(dummyError); // turn our message into bytes
+
+                try
+                {
+                    ns.Write(outgoing_msg,0,outgoing_msg.Length); // try to send it
+                }
+
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.ToString()); // if any errors, print them and break
+                    break;
+                }
+
+
+            }
+
+        }
+
         public static void FindCity()
         {
             // Set ACK message
@@ -396,7 +435,7 @@ namespace mdh_code
 
         // Initial mode for city - sends identifier, then awaits for acknowledgement to close listening server
         // returns true if successful, false if unsuccessful.
-        public static bool CitySetup()
+        public static void CitySetup()
         {
             bool done = false;
             bool status = false; // we set to true if connection was successful!
@@ -447,6 +486,7 @@ namespace mdh_code
                     {
                         Console.WriteLine("Success! Received MSG " + responseString);
                         status = true;
+                        ContextSwitch.FinishSetup();
                         break;
                     }
                     // START THE CLIENT
@@ -463,9 +503,63 @@ namespace mdh_code
             // Stop the listener on success
             ns.Close();
             listener.Stop();
+        }
 
-            // return the boolean
-            return status;
+        public static void CityServer()
+        {
+            bool done = false;
+
+            // Listen for connections on our defined port
+            var listener = new TcpListener(IPAddress.Any, portNum);
+                     
+            listener.Start();
+
+            // Echo we've started listening
+            Console.WriteLine("City Control Listening on port " + portNum + "...");
+
+
+            while (!done)
+            {     
+                //byte[] incoming_msg = Encoding.ASCII.GetBytes(cityID); // Retrieve and convert
+                TcpClient client = listener.AcceptTcpClient(); // accept the connection
+
+                NetworkStream ns = client.GetStream(); // establish a network stream
+                
+                Byte[] data = new Byte[256];
+
+                String responseString = string.Empty;
+
+                // try to send our data
+                try
+                {                   
+
+                    Int32 bytes = ns.Read(data, 0 , data.Length);
+                    
+                    Console.WriteLine("Receiving...");
+
+                    responseString = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
+
+                    if (!String.IsNullOrEmpty(responseString))
+                    {
+                        Console.WriteLine("Success! Received Error " + responseString); // write the message we received
+                        ns.Close();
+                        client.Close();
+                    }
+
+                    else
+                    {
+                        Console.WriteLine("Unable to receive data...");
+                    }
+                    // START THE CLIENT
+                    // IF CLIENT RETURNS TRUE SET DONE = TRUE
+                }
+                   
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.ToString());
+                    break;
+                }
+            }
         }
       
     }

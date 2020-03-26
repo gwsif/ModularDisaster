@@ -46,6 +46,11 @@ namespace mdh_code
                 {
                     NetworkRW.FindCity();
                 }
+
+                if(args[i] == "--send-errors")
+                {
+                    NetworkRW.SendError();
+                }
             }
             #endregion
         
@@ -62,6 +67,12 @@ namespace mdh_code
                 RetrieveData.CreateFiles();
             }
 
+            // Create a setupstat file
+            if (!File.Exists("setupstat"))
+            {
+                ContextSwitch.CreateSetup();
+            }
+
             #endregion
 
             #region ModeDependants
@@ -70,68 +81,71 @@ namespace mdh_code
                 // We await a connection from the Town Control
                 // by using the TCP Unit Server in Network Read/Write
                 Console.WriteLine("Unit Mode Detected!");
+                ContextSwitch.FinishSetup(); // Setup can be set to finished
                 NetworkRW.TcpUnitServer();
             }
 
             if (ContextSwitch.GetMode() == 1) // if town
             {
                 Console.WriteLine("Town Mode Detected!");
+
+                string stat = ContextSwitch.GetSetup();
                 
                 // if the database doesn't exist, generate it and populate it
-                if(!File.Exists("mdh.db"))
-                {   
+                if(stat == "pending")
+                {
                     Console.WriteLine("Generating Database...");
                     SQLHelper.CreateDB(); // create the database
                     Console.WriteLine("Scanning Network...");
                     NetworkRW.TCPScan(); // populate the database
                     Console.WriteLine("Detecting City...");
                     NetworkRW.FindCity(); // find the city
-
+                    ContextSwitch.FinishSetup(); // finish the setup
                 }
 
-                // Initiate the TCP town client
-                NetworkRW.TcpTownClient();
+                // Check setup again
+                stat = ContextSwitch.GetSetup();
+
+                if (stat == "done")
+                {
+                    // Initiate the TCP town client
+                    Console.WriteLine("Starting town client...");
+                    NetworkRW.TcpTownClient();
+
+                    // When finished, echo the errors to city
+                    Console.WriteLine("Sending any errors to city control...");
+                    System.Threading.Thread.Sleep(5000); // pause briefly before continuing
+                    NetworkRW.SendError();
+                    Console.WriteLine("Successfully sent errors");
+                }         
             }
 
             if (ContextSwitch.GetMode() == 2) // if city
             {
                 Console.WriteLine("City Mode Detected!");
 
+                string stat = ContextSwitch.GetSetup();
+
                 // if the database doesn't exist yet generate it, but do not populate it.
-                if(!File.Exists("mdh.db"))
+                if(stat == "pending")
                 {
+                    Console.WriteLine("Initializating setup:");
                     Console.WriteLine("Generating Database...");
                     SQLHelper.CreateDB(); // create the database
-
-                    // initialize the city and await confirmation
-                    if (NetworkRW.CitySetup() == true)
-                    {
-                        Console.WriteLine("City Setup Successful!");
-                    }
+                    NetworkRW.CitySetup(); // run the city setup
                 }
 
+                //check setup again
+                stat = ContextSwitch.GetSetup();
+                
+                if(stat == "done")
+                {
+                    // just run the city server
+                    NetworkRW.CityServer();
+                }
             }
+
             #endregion
-        /*
-            // Instantiate our DataReader
-            RetrieveData rd = new RetrieveData();
-
-            // Create the holder files if they don't exist
-            rd.CreateFiles();
-
-            // Read our levels!
-            rd.ReadLevels();
-
-            // Print out the local Network Device MAC address and IPv6 Address
-            NetworkRW rw = new NetworkRW();
-
-            Console.WriteLine("\n"); // newline for testing
-            //Console.WriteLine("LOCAL MAC ADDRESS: " + rw.ReturnMAC()); // returns the MAC address of the current machine
-            //Console.WriteLine("LOCAL IP: " + rw.ReturnIP());  // returns the IPv6 address of the current machine
-
-            Console.WriteLine("Scanning Network...");
-            rw.TCPScan(); // Run the TCPScan
-        */
         }
     }
 }

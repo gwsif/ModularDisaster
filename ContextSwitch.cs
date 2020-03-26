@@ -80,5 +80,36 @@ namespace mdh_code
 
             return mode;
         }
+
+        public static void CreateSetup()
+        {
+             string u = "echo pending > setupstat".ExecBash(); // Set initial setup to pending
+             Console.WriteLine("Setup file created");
+        }
+
+        public static void FinishSetup()
+        {
+             string u = "echo done > setupstat".ExecBash();
+             Console.WriteLine("Setup successful!");
+        }
+
+        public static string GetSetup()
+        {
+             string mode = "";
+             string[] lines = File.ReadLines("setupstat").ToArray();
+             
+             if (lines == null || lines.Length == 0)
+             {
+               Console.WriteLine("Invalid Mode Detected! Cannot Read Setup file!"); // if the array is empty set mode to invalid
+               mode = "invalid";
+             }
+
+             else
+             {
+               mode = Convert.ToString(lines[0]); // otherwise set mode to file contents.
+             }
+
+             return mode;
+        }
     }
 }
